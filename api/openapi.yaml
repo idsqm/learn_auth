@@ -1,0 +1,412 @@
+openapi: 3.0.3
+info:
+  title: Auth Service API
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8080
+    description: Local development
+
+paths:
+  /api/v1/auth/register:
+    post:
+      summary: Register a new user
+      operationId: register
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, email, password]
+              properties:
+                username:
+                  type: string
+                  example: johndoe
+                email:
+                  type: string
+                  format: email
+                  example: john@example.com
+                password:
+                  type: string
+                  minLength: 8
+                  example: secret123
+      responses:
+        "201":
+          description: Registration successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+              examples:
+                required:
+                  value:
+                    errors:
+                      email: [required]
+                      password: [required]
+                unique:
+                  value:
+                    errors:
+                      email: [unique]
+
+  /api/v1/auth/verify-email:
+    post:
+      summary: Verify email address
+      operationId: verifyEmail
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token:
+                  type: string
+      responses:
+        "200":
+          description: Email verified
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "400":
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppError"
+              example:
+                error:
+                  code: INVALID_VERIFY_TOKEN
+                  message: Email verification token is invalid or expired
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /api/v1/auth/login:
+    post:
+      summary: Login and get tokens
+      operationId: login
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppError"
+              example:
+                error:
+                  code: INVALID_CREDENTIALS
+                  message: Invalid email or password
+        "403":
+          description: Email not verified
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppError"
+              example:
+                error:
+                  code: EMAIL_NOT_VERIFIED
+                  message: Please verify your email before logging in
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /api/v1/auth/refresh:
+    post:
+      summary: Refresh access token
+      operationId: refresh
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refresh_token]
+              properties:
+                refresh_token:
+                  type: string
+      responses:
+        "200":
+          description: Tokens refreshed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenResponse"
+        "401":
+          description: Token expired or revoked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppError"
+              examples:
+                expired:
+                  value:
+                    error:
+                      code: REFRESH_TOKEN_EXPIRED
+                      message: Refresh token has expired
+                revoked:
+                  value:
+                    error:
+                      code: REFRESH_TOKEN_REVOKED
+                      message: Refresh token has been revoked
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /api/v1/auth/logout:
+    post:
+      summary: Logout a session
+      operationId: logout
+      tags: [auth]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [session_id]
+              properties:
+                session_id:
+                  type: string
+                  format: uuid
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppError"
+              example:
+                error:
+                  code: SESSION_NOT_FOUND
+                  message: Session not found
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /api/v1/auth/sessions:
+    get:
+      summary: List active sessions
+      operationId: listSessions
+      tags: [auth]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: List of sessions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sessions:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Session"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/v1/auth/password/reset-request:
+    post:
+      summary: Request password reset email
+      operationId: requestPasswordReset
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+      responses:
+        "200":
+          description: If account exists, reset email sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /api/v1/auth/password/reset:
+    post:
+      summary: Reset password with token
+      operationId: resetPassword
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, new_password]
+              properties:
+                token:
+                  type: string
+                new_password:
+                  type: string
+                  minLength: 8
+      responses:
+        "200":
+          description: Password reset successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "400":
+          description: Invalid or expired reset token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppError"
+              example:
+                error:
+                  code: INVALID_RESET_TOKEN
+                  message: Password reset token is invalid or expired
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    TokenResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+
+    Session:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        ip_address:
+          type: string
+        user_agent:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+
+    AppError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              enum:
+                - INVALID_CREDENTIALS
+                - EMAIL_NOT_VERIFIED
+                - ACCESS_TOKEN_EXPIRED
+                - ACCESS_TOKEN_INVALID
+                - REFRESH_TOKEN_EXPIRED
+                - REFRESH_TOKEN_REVOKED
+                - USER_NOT_FOUND
+                - SESSION_NOT_FOUND
+                - INVALID_RESET_TOKEN
+                - INVALID_VERIFY_TOKEN
+                - INTERNAL_ERROR
+            message:
+              type: string
+
+    ValidationError:
+      type: object
+      properties:
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+          example:
+            email: [required]
+            password: ["min:8"]
+
+  responses:
+    ValidationError:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ValidationError"
+
+    Unauthorized:
+      description: Authentication required or token invalid
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/AppError"
+          examples:
+            expired:
+              value:
+                error:
+                  code: ACCESS_TOKEN_EXPIRED
+                  message: Access token has expired
+            invalid:
+              value:
+                error:
+                  code: ACCESS_TOKEN_INVALID
+                  message: Access token is invalid
