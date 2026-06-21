@@ -8,6 +8,7 @@ import (
 	"github.com/andruho/auth/internal/service"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
 )
 
 func NewRouter(authSvc service.AuthService, jwtManager *jwt.Manager, tokens repository.TokenRepository) http.Handler {
@@ -16,6 +17,13 @@ func NewRouter(authSvc service.AuthService, jwtManager *jwt.Manager, tokens repo
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.RequestID)
+
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins: []string{"*"},
+		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders: []string{"Authorization", "Content-Type"},
+		MaxAge:         300,
+	}))
 
 	auth := NewAuthHandler(authSvc)
 	sessions := NewSessionHandler(authSvc)
