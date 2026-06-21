@@ -1,4 +1,5 @@
-.PHONY: run build test migrate-up migrate-down migrate-create docker-up docker-down
+.PHONY: run build test migrate-up migrate-down migrate-create docker-up docker-down \
+	prod-up prod-down prod-build prod-migrate-up prod-migrate-down
 
 include .env
 export
@@ -30,3 +31,20 @@ docker-up:
 
 docker-down:
 	docker compose down
+
+PROD=docker compose -f docker-compose.prod.yml
+
+prod-up:
+	$(PROD) up -d --build
+
+prod-down:
+	$(PROD) down
+
+prod-build:
+	$(PROD) build
+
+prod-migrate-up:
+	$(PROD) run --rm app goose -dir /migrations postgres "$(DB_URL_DOCKER)" up
+
+prod-migrate-down:
+	$(PROD) run --rm app goose -dir /migrations postgres "$(DB_URL_DOCKER)" down
