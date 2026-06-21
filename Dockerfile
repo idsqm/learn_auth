@@ -4,10 +4,10 @@ WORKDIR /app
 
 COPY go.mod go.sum ./
 RUN go mod download
+RUN go install github.com/pressly/goose/v3/cmd/goose@latest
 
 COPY . .
 RUN CGO_ENABLED=0 go build -o /auth ./cmd/auth
-RUN go install github.com/pressly/goose/v3/cmd/goose@latest
 
 FROM alpine:3.21 AS runner
 
