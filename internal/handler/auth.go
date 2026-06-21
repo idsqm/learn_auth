@@ -200,6 +200,20 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	writeOK(w, map[string]string{"message": "Logged out successfully"})
 }
 
+func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
+	user, ok := r.Context().Value("user").(*domain.User)
+	if !ok || user == nil {
+		writeError(w, domain.ErrUnauthorized)
+		return
+	}
+
+	writeOK(w, map[string]interface{}{
+		"id":       user.ID,
+		"username": user.Username,
+		"email":    user.Email,
+	})
+}
+
 type resetRequestBody struct {
 	Email string `json:"email"`
 }
