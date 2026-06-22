@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strings"
 
 	"github.com/andruho/auth/internal/domain"
 	"github.com/andruho/auth/internal/service"
@@ -192,7 +193,12 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.auth.Logout(r.Context(), sessionID); err != nil {
+	accessToken := ""
+	if header := r.Header.Get("Authorization"); header != "" {
+		accessToken, _ = strings.CutPrefix(header, "Bearer ")
+	}
+
+	if err := h.auth.Logout(r.Context(), sessionID, accessToken); err != nil {
 		writeError(w, err)
 		return
 	}

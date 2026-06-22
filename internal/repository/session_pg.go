@@ -12,6 +12,7 @@ import (
 
 type SessionRepository interface {
 	Create(ctx context.Context, s domain.Session) error
+	GetByID(ctx context.Context, id uuid.UUID) (domain.Session, error)
 	GetByRefreshToken(ctx context.Context, token string) (domain.Session, error)
 	ListByUserID(ctx context.Context, userID uuid.UUID) ([]domain.Session, error)
 	Delete(ctx context.Context, id uuid.UUID) error
@@ -24,6 +25,19 @@ type sessionRepo struct {
 
 func NewSessionRepository(pool *pgxpool.Pool) SessionRepository {
 	return &sessionRepo{pool: pool}
+}
+
+func (r *sessionRepo) GetByID(ctx context.Context, id uuid.UUID) (domain.Session, error) {
+	var s domain.Session
+	err := r.pool.QueryRow(ctx,
+		`SELECT id, user_id, refresh_token, ip_address, user_agent, expires_at, created_at
+		 FROM sessions WHERE id = $1`, id,
+	).Scan(&s.ID, &s.UserID, &s.RefreshToken, &s.IPAddress, &s.UserAgent, &s.ExpiresAt, &s.CreatedAt)
+
+	if errors.Is(err, pgx.ErrNoRows) {
+		return domain.Session{}, domain.ErrSessionNotFound
+	}
+	return s, err
 }
 
 func (r *sessionRepo) Create(ctx context.Context, s domain.Session) error {

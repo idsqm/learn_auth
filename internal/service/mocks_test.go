@@ -34,6 +34,7 @@ func (m *mockUserRepo) UpdatePassword(ctx context.Context, id uuid.UUID, newHash
 
 type mockSessionRepo struct {
 	createFn           func(ctx context.Context, s domain.Session) error
+	getByIDFn          func(ctx context.Context, id uuid.UUID) (domain.Session, error)
 	getByRefreshFn     func(ctx context.Context, token string) (domain.Session, error)
 	listByUserIDFn     func(ctx context.Context, userID uuid.UUID) ([]domain.Session, error)
 	deleteFn           func(ctx context.Context, id uuid.UUID) error
@@ -42,6 +43,9 @@ type mockSessionRepo struct {
 
 func (m *mockSessionRepo) Create(ctx context.Context, s domain.Session) error {
 	return m.createFn(ctx, s)
+}
+func (m *mockSessionRepo) GetByID(ctx context.Context, id uuid.UUID) (domain.Session, error) {
+	return m.getByIDFn(ctx, id)
 }
 func (m *mockSessionRepo) GetByRefreshToken(ctx context.Context, token string) (domain.Session, error) {
 	return m.getByRefreshFn(ctx, token)

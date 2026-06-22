@@ -22,7 +22,7 @@ type AuthService interface {
 	VerifyEmail(ctx context.Context, token string) error
 	Login(ctx context.Context, email, password, ip, userAgent string) (accessToken, refreshToken string, err error)
 	Refresh(ctx context.Context, refreshToken, ip, userAgent string) (newAccess, newRefresh string, err error)
-	Logout(ctx context.Context, sessionID uuid.UUID) error
+	Logout(ctx context.Context, sessionID uuid.UUID, accessToken string) error
 	ListSessions(ctx context.Context, userID uuid.UUID) ([]domain.Session, error)
 	RequestPasswordReset(ctx context.Context, email string) error
 	ResetPassword(ctx context.Context, token, newPassword string) error
@@ -197,7 +197,24 @@ func (s *authService) Refresh(ctx context.Context, refreshToken, ip, userAgent s
 	return newAccess, newRefresh, nil
 }
 
-func (s *authService) Logout(ctx context.Context, sessionID uuid.UUID) error {
+func (s *authService) Logout(ctx context.Context, sessionID uuid.UUID, accessToken string) error {
+	session, err := s.sessions.GetByID(ctx, sessionID)
+	if err != nil {
+		return err
+	}
+
+	if accessClaims, err := s.jwt.Parse(accessToken); err == nil {
+		if ttl := time.Until(accessClaims.ExpiresAt.Time); ttl > 0 {
+			_ = s.tokens.BlacklistToken(ctx, accessClaims.ID, ttl)
+		}
+	}
+
+	if refreshClaims, err := s.jwt.Parse(session.RefreshToken); err == nil {
+		if ttl := time.Until(refreshClaims.ExpiresAt.Time); ttl > 0 {
+			_ = s.tokens.BlacklistToken(ctx, refreshClaims.ID, ttl)
+		}
+	}
+
 	return s.sessions.Delete(ctx, sessionID)
 }
 
