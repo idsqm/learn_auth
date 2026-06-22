@@ -3,6 +3,7 @@ package handler
 import (
 	"net/http"
 
+	"github.com/andruho/auth/internal/domain"
 	"github.com/andruho/auth/internal/service"
 )
 
@@ -15,7 +16,11 @@ func NewSessionHandler(auth service.AuthService) *SessionHandler {
 }
 
 func (h *SessionHandler) List(w http.ResponseWriter, r *http.Request) {
-	userID := UserIDFromContext(r.Context())
+	userID, ok := UserIDFromContext(r.Context())
+	if !ok {
+		writeError(w, domain.ErrUnauthorized)
+		return
+	}
 
 	sessions, err := h.auth.ListSessions(r.Context(), userID)
 	if err != nil {

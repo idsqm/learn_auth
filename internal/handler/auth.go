@@ -201,14 +201,20 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
-	user, ok := r.Context().Value("user").(*domain.User)
-	if !ok || user == nil {
+	userId, ok := UserIDFromContext(r.Context())
+	if !ok {
 		writeError(w, domain.ErrUnauthorized)
 		return
 	}
 
+	user, err := h.auth.Me(r.Context(), userId)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+
 	writeOK(w, map[string]interface{}{
-		"id":       user.ID,
+		"id":       userId,
 		"username": user.Username,
 		"email":    user.Email,
 	})

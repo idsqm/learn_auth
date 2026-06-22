@@ -26,6 +26,7 @@ type AuthService interface {
 	ListSessions(ctx context.Context, userID uuid.UUID) ([]domain.Session, error)
 	RequestPasswordReset(ctx context.Context, email string) error
 	ResetPassword(ctx context.Context, token, newPassword string) error
+	Me(ctx context.Context, userID uuid.UUID) (*domain.User, error)
 }
 
 type authService struct {
@@ -251,6 +252,14 @@ func (s *authService) ResetPassword(ctx context.Context, token, newPassword stri
 	_ = s.sessions.DeleteAllForUser(ctx, userID)
 
 	return nil
+}
+
+func (s *authService) Me(ctx context.Context, userID uuid.UUID) (*domain.User, error) {
+	user, err := s.users.GetByID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
 }
 
 func generateSecureToken() (string, error) {

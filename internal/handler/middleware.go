@@ -17,9 +17,9 @@ type ctxKey string
 
 const userIDKey ctxKey = "user_id"
 
-func UserIDFromContext(ctx context.Context) uuid.UUID {
-	id, _ := ctx.Value(userIDKey).(uuid.UUID)
-	return id
+func UserIDFromContext(ctx context.Context) (uuid.UUID, bool) {
+	id, ok := ctx.Value(userIDKey).(uuid.UUID)
+	return id, ok
 }
 
 func AuthMiddleware(jwtManager *jwtpkg.Manager, tokens repository.TokenRepository) func(http.Handler) http.Handler {
