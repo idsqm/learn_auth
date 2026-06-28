@@ -185,7 +185,7 @@ func TestVerifyEmail_InvalidToken(t *testing.T) {
 func TestRefresh_BlacklistedToken(t *testing.T) {
 	jwtManager := jwtpkg.NewManager("test-secret", 15*time.Minute, 7*24*time.Hour)
 	userID := uuid.New()
-	refreshToken, _ := jwtManager.GenerateRefreshToken(userID)
+	refreshToken, _ := jwtManager.GenerateRefreshToken(userID, "student")
 
 	tokens := &mockTokenRepo{
 		isBlacklistedFn: func(_ context.Context, _ string) (bool, error) {

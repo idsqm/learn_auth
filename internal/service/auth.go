@@ -27,6 +27,7 @@ type AuthService interface {
 	RequestPasswordReset(ctx context.Context, email string) error
 	ResetPassword(ctx context.Context, token, newPassword string) error
 	Me(ctx context.Context, userID uuid.UUID) (*domain.User, error)
+	UpdateUserRole(ctx context.Context, userID uuid.UUID, role string) error
 }
 
 type authService struct {
@@ -112,12 +113,12 @@ func (s *authService) Login(ctx context.Context, emailAddr, pwd, ip, userAgent s
 		return "", "", domain.ErrEmailNotVerified
 	}
 
-	accessToken, err := s.jwt.GenerateAccessToken(user.ID)
+	accessToken, err := s.jwt.GenerateAccessToken(user.ID, user.Role)
 	if err != nil {
 		return "", "", err
 	}
 
-	refreshToken, err := s.jwt.GenerateRefreshToken(user.ID)
+	refreshToken, err := s.jwt.GenerateRefreshToken(user.ID, user.Role)
 	if err != nil {
 		return "", "", err
 	}
@@ -171,12 +172,17 @@ func (s *authService) Refresh(ctx context.Context, refreshToken, ip, userAgent s
 		return "", "", err
 	}
 
-	newAccess, err := s.jwt.GenerateAccessToken(claims.UserID)
+	user, err := s.users.GetByID(ctx, claims.UserID)
 	if err != nil {
 		return "", "", err
 	}
 
-	newRefresh, err := s.jwt.GenerateRefreshToken(claims.UserID)
+	newAccess, err := s.jwt.GenerateAccessToken(claims.UserID, user.Role)
+	if err != nil {
+		return "", "", err
+	}
+
+	newRefresh, err := s.jwt.GenerateRefreshToken(claims.UserID, user.Role)
 	if err != nil {
 		return "", "", err
 	}
@@ -277,6 +283,10 @@ func (s *authService) Me(ctx context.Context, userID uuid.UUID) (*domain.User, e
 		return nil, err
 	}
 	return &user, nil
+}
+
+func (s *authService) UpdateUserRole(ctx context.Context, userID uuid.UUID, role string) error {
+	return s.users.UpdateRole(ctx, userID, role)
 }
 
 func generateSecureToken() (string, error) {

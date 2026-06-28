@@ -14,6 +14,7 @@ type mockUserRepo struct {
 	getByIDFn        func(ctx context.Context, id uuid.UUID) (domain.User, error)
 	verifyEmailFn    func(ctx context.Context, id uuid.UUID) error
 	updatePasswordFn func(ctx context.Context, id uuid.UUID, newHash string) error
+	updateRoleFn     func(ctx context.Context, id uuid.UUID, role string) error
 }
 
 func (m *mockUserRepo) Create(ctx context.Context, username, email, passwordHash string) (domain.User, error) {
@@ -30,6 +31,12 @@ func (m *mockUserRepo) VerifyEmail(ctx context.Context, id uuid.UUID) error {
 }
 func (m *mockUserRepo) UpdatePassword(ctx context.Context, id uuid.UUID, newHash string) error {
 	return m.updatePasswordFn(ctx, id, newHash)
+}
+func (m *mockUserRepo) UpdateRole(ctx context.Context, id uuid.UUID, role string) error {
+	if m.updateRoleFn != nil {
+		return m.updateRoleFn(ctx, id, role)
+	}
+	return nil
 }
 
 type mockSessionRepo struct {

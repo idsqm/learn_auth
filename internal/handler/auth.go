@@ -8,6 +8,7 @@ import (
 
 	"github.com/andruho/auth/internal/domain"
 	"github.com/andruho/auth/internal/service"
+	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 )
 
@@ -223,6 +224,7 @@ func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
 		"id":       userId,
 		"username": user.Username,
 		"email":    user.Email,
+		"role":     user.Role,
 	})
 }
 
@@ -284,4 +286,39 @@ func (h *AuthHandler) ResetPassword(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeOK(w, map[string]string{"message": "Password has been reset successfully"})
+}
+
+type updateRoleRequest struct {
+	Role string `json:"role"`
+}
+
+func (h *AuthHandler) UpdateRole(w http.ResponseWriter, r *http.Request) {
+	idParam := chi.URLParam(r, "id")
+	userID, err := uuid.Parse(idParam)
+	if err != nil {
+		ve := domain.NewValidationErrors()
+		ve.Add("id", "uuid")
+		writeError(w, ve)
+		return
+	}
+
+	var req updateRoleRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, domain.ErrValidation)
+		return
+	}
+
+	if req.Role != "student" && req.Role != "author" {
+		ve := domain.NewValidationErrors()
+		ve.Add("role", "must be 'student' or 'author'")
+		writeError(w, ve)
+		return
+	}
+
+	if err := h.auth.UpdateUserRole(r.Context(), userID, req.Role); err != nil {
+		writeError(w, err)
+		return
+	}
+
+	writeOK(w, map[string]string{"message": "Role updated successfully"})
 }

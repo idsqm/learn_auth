@@ -1,0 +1,5 @@
+-- +goose Up
+ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(20) NOT NULL DEFAULT 'student';
+
+-- +goose Down
+ALTER TABLE users DROP COLUMN IF EXISTS role;

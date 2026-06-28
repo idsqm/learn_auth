@@ -18,6 +18,7 @@ type UserRepository interface {
 	GetByID(ctx context.Context, id uuid.UUID) (domain.User, error)
 	VerifyEmail(ctx context.Context, id uuid.UUID) error
 	UpdatePassword(ctx context.Context, id uuid.UUID, newHash string) error
+	UpdateRole(ctx context.Context, id uuid.UUID, role string) error
 }
 
 type userRepo struct {
@@ -32,9 +33,9 @@ func (r *userRepo) Create(ctx context.Context, username, email, passwordHash str
 	var u domain.User
 	err := r.pool.QueryRow(ctx,
 		`INSERT INTO users (username, email, password_hash) VALUES ($1, $2, $3)
-		 RETURNING id, username, email, password_hash, is_verified, created_at, updated_at`,
+		 RETURNING id, username, email, password_hash, is_verified, role, created_at, updated_at`,
 		username, email, passwordHash,
-	).Scan(&u.ID, &u.Username, &u.Email, &u.PasswordHash, &u.IsVerified, &u.CreatedAt, &u.UpdatedAt)
+	).Scan(&u.ID, &u.Username, &u.Email, &u.PasswordHash, &u.IsVerified, &u.Role, &u.CreatedAt, &u.UpdatedAt)
 
 	if err != nil {
 		var pgErr *pgconn.PgError
@@ -52,9 +53,9 @@ func (r *userRepo) Create(ctx context.Context, username, email, passwordHash str
 func (r *userRepo) GetByEmail(ctx context.Context, email string) (domain.User, error) {
 	var u domain.User
 	err := r.pool.QueryRow(ctx,
-		`SELECT id, username, email, password_hash, is_verified, created_at, updated_at FROM users WHERE email = $1`,
+		`SELECT id, username, email, password_hash, is_verified, role, created_at, updated_at FROM users WHERE email = $1`,
 		email,
-	).Scan(&u.ID, &u.Username, &u.Email, &u.PasswordHash, &u.IsVerified, &u.CreatedAt, &u.UpdatedAt)
+	).Scan(&u.ID, &u.Username, &u.Email, &u.PasswordHash, &u.IsVerified, &u.Role, &u.CreatedAt, &u.UpdatedAt)
 
 	if errors.Is(err, pgx.ErrNoRows) {
 		return domain.User{}, domain.ErrUserNotFound
@@ -65,9 +66,9 @@ func (r *userRepo) GetByEmail(ctx context.Context, email string) (domain.User, e
 func (r *userRepo) GetByID(ctx context.Context, id uuid.UUID) (domain.User, error) {
 	var u domain.User
 	err := r.pool.QueryRow(ctx,
-		`SELECT id, username, email, password_hash, is_verified, created_at, updated_at FROM users WHERE id = $1`,
+		`SELECT id, username, email, password_hash, is_verified, role, created_at, updated_at FROM users WHERE id = $1`,
 		id,
-	).Scan(&u.ID, &u.Username, &u.Email, &u.PasswordHash, &u.IsVerified, &u.CreatedAt, &u.UpdatedAt)
+	).Scan(&u.ID, &u.Username, &u.Email, &u.PasswordHash, &u.IsVerified, &u.Role, &u.CreatedAt, &u.UpdatedAt)
 
 	if errors.Is(err, pgx.ErrNoRows) {
 		return domain.User{}, domain.ErrUserNotFound
@@ -84,5 +85,11 @@ func (r *userRepo) VerifyEmail(ctx context.Context, id uuid.UUID) error {
 func (r *userRepo) UpdatePassword(ctx context.Context, id uuid.UUID, newHash string) error {
 	_, err := r.pool.Exec(ctx,
 		`UPDATE users SET password_hash = $1, updated_at = now() WHERE id = $2`, newHash, id)
+	return err
+}
+
+func (r *userRepo) UpdateRole(ctx context.Context, id uuid.UUID, role string) error {
+	_, err := r.pool.Exec(ctx,
+		`UPDATE users SET role = $1, updated_at = now() WHERE id = $2`, role, id)
 	return err
 }

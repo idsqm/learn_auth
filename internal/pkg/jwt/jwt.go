@@ -11,6 +11,7 @@ import (
 type Claims struct {
 	jwt.RegisteredClaims
 	UserID uuid.UUID `json:"user_id"`
+	Role   string    `json:"role"`
 }
 
 type Manager struct {
@@ -27,12 +28,12 @@ func NewManager(secret string, accessTTL, refreshTTL time.Duration) *Manager {
 	}
 }
 
-func (m *Manager) GenerateAccessToken(userID uuid.UUID) (string, error) {
-	return m.generateToken(userID, m.accessTokenTTL)
+func (m *Manager) GenerateAccessToken(userID uuid.UUID, role string) (string, error) {
+	return m.generateToken(userID, role, m.accessTokenTTL)
 }
 
-func (m *Manager) GenerateRefreshToken(userID uuid.UUID) (string, error) {
-	return m.generateToken(userID, m.refreshTokenTTL)
+func (m *Manager) GenerateRefreshToken(userID uuid.UUID, role string) (string, error) {
+	return m.generateToken(userID, role, m.refreshTokenTTL)
 }
 
 func (m *Manager) Parse(tokenStr string) (*Claims, error) {
@@ -58,7 +59,7 @@ func (m *Manager) RefreshTokenTTL() time.Duration {
 	return m.refreshTokenTTL
 }
 
-func (m *Manager) generateToken(userID uuid.UUID, ttl time.Duration) (string, error) {
+func (m *Manager) generateToken(userID uuid.UUID, role string, ttl time.Duration) (string, error) {
 	now := time.Now()
 	claims := &Claims{
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -68,6 +69,7 @@ func (m *Manager) generateToken(userID uuid.UUID, ttl time.Duration) (string, er
 			ExpiresAt: jwt.NewNumericDate(now.Add(ttl)),
 		},
 		UserID: userID,
+		Role:   role,
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
