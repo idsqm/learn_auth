@@ -15,6 +15,7 @@ services:
       SMTP_HOST: mailpit
       SMTP_PORT: 1025
       SMTP_FROM: ${SMTP_FROM:-noreply@auth.local}
+      FRONTEND_URL: ${FRONTEND_URL}
     restart: unless-stopped
     depends_on:
       postgres:
