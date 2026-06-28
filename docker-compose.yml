@@ -7,7 +7,7 @@ services:
       - "${SERVER_PORT:-8080}:8080"
     environment:
       SERVER_PORT: ${SERVER_PORT:-8080}
-      DB_URL: postgres://${POSTGRES_USER:-auth}:${POSTGRES_PASSWORD:-auth}@postgres:5432/${POSTGRES_DB:-auth}?sslmode=disable
+      DB_URL: postgres://${POSTGRES_USER:-auth}:${POSTGRES_PASSWORD:-auth}@auth-db:5432/${POSTGRES_DB:-auth}?sslmode=disable
       REDIS_URL: redis://redis:6379/0
       JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
       ACCESS_TOKEN_TTL: ${ACCESS_TOKEN_TTL:-15m}
@@ -17,12 +17,15 @@ services:
       SMTP_FROM: ${SMTP_FROM:-noreply@auth.local}
       FRONTEND_URL: ${FRONTEND_URL}
     depends_on:
-      postgres:
+      auth-db:
         condition: service_healthy
       redis:
         condition: service_healthy
       mailpit:
         condition: service_started
+    networks:
+      - auth-backend
+      - learnquest-cache
 
   dev:
     build:
@@ -33,7 +36,7 @@ services:
       - .:/app
       - gomodcache:/go/pkg/mod
     environment:
-      DB_URL: postgres://${POSTGRES_USER:-auth}:${POSTGRES_PASSWORD:-auth}@postgres:5432/${POSTGRES_DB:-auth}?sslmode=disable
+      DB_URL: postgres://${POSTGRES_USER:-auth}:${POSTGRES_PASSWORD:-auth}@auth-db:5432/${POSTGRES_DB:-auth}?sslmode=disable
       REDIS_URL: redis://redis:6379/0
       JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
       ACCESS_TOKEN_TTL: ${ACCESS_TOKEN_TTL:-15m}
@@ -43,15 +46,18 @@ services:
       SMTP_FROM: ${SMTP_FROM:-noreply@auth.local}
       DEBUG: ${DEBUG:-false}
     depends_on:
-      postgres:
+      auth-db:
         condition: service_healthy
       redis:
         condition: service_healthy
     profiles:
       - tools
+    networks:
+      - auth-backend
+      - learnquest-cache
 
-  postgres:
-    image: postgres:16
+  auth-db:
+    image: postgres:16-alpine
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-auth}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-auth}
@@ -65,9 +71,12 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+    networks:
+      - auth-backend
+      - learnquest
 
   redis:
-    image: redis:7
+    image: redis:7-alpine
     ports:
       - "${REDIS_PORT:-6379}:6379"
     healthcheck:
@@ -75,13 +84,23 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+    networks:
+      - learnquest-cache
 
   mailpit:
     image: axllent/mailpit
     ports:
-      - "${MAILPIT_SMTP_PORT:-1025}:1025"
-      - "${MAILPIT_UI_PORT:-8025}:8025"
+      - "127.0.0.1:${MAILPIT_SMTP_PORT:-1025}:1025"
+      - "127.0.0.1:${MAILPIT_UI_PORT:-8025}:8025"
+    networks:
+      - learnquest-cache
 
 volumes:
   pgdata:
   gomodcache:
+
+networks:
+  auth-backend:
+  learnquest-cache:
+  learnquest:
+    external: true

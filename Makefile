@@ -6,7 +6,7 @@ export
 
 DEV=docker compose --profile tools run --rm dev
 GOOSE=$(DEV) go run github.com/pressly/goose/v3/cmd/goose@latest
-DB_URL_DOCKER=postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres:5432/$(POSTGRES_DB)?sslmode=disable
+DB_URL_DOCKER=postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@auth-db:5432/$(POSTGRES_DB)?sslmode=disable
 
 run:
 	docker compose up -d --build --force-recreate
