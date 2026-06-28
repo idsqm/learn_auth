@@ -68,7 +68,7 @@ func main() {
 	tokens := repository.NewTokenRepository(rdb)
 
 	jwtManager := jwt.NewManager(cfg.JWTSecret, cfg.AccessTokenTTL, cfg.RefreshTokenTTL)
-	emailSender := email.NewSMTPSender(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPFrom)
+	emailSender := email.NewSMTPSender(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPFrom, cfg.FrontendURL)
 
 	authSvc := service.NewAuthService(users, sessions, tokens, emailSender, jwtManager, log)
 

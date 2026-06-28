@@ -7,24 +7,27 @@ import (
 )
 
 type SMTPSender struct {
-	host string
-	port int
-	from string
+	host        string
+	port        int
+	from        string
+	frontendURL string
 }
 
-func NewSMTPSender(host string, port int, from string) *SMTPSender {
-	return &SMTPSender{host: host, port: port, from: from}
+func NewSMTPSender(host string, port int, from, frontendURL string) *SMTPSender {
+	return &SMTPSender{host: host, port: port, from: from, frontendURL: frontendURL}
 }
 
 func (s *SMTPSender) SendVerification(_ context.Context, to, token string) error {
 	subject := "Verify your email"
-	body := fmt.Sprintf("Your verification code: %s", token)
+	link := fmt.Sprintf("%s/verify-email?token=%s", s.frontendURL, token)
+	body := fmt.Sprintf("Please verify your email by clicking the link below:\n\n%s", link)
 	return s.send(to, subject, body)
 }
 
 func (s *SMTPSender) SendPasswordReset(_ context.Context, to, token string) error {
 	subject := "Password reset"
-	body := fmt.Sprintf("Your password reset code: %s", token)
+	link := fmt.Sprintf("%s/reset-password?token=%s", s.frontendURL, token)
+	body := fmt.Sprintf("To reset your password, click the link below:\n\n%s", link)
 	return s.send(to, subject, body)
 }
 

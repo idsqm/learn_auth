@@ -22,6 +22,8 @@ type Config struct {
 	SMTPPort int    `env:"SMTP_PORT,default=1025"`
 	SMTPFrom string `env:"SMTP_FROM,default=noreply@auth.local"`
 
+	FrontendURL string `env:"FRONTEND_URL,default=http://localhost:3000"`
+
 	Debug bool `env:"DEBUG,default=false"`
 }
 
