@@ -8,6 +8,16 @@ import (
 	"github.com/andruho/auth/internal/domain"
 )
 
+var (
+	logger    *slog.Logger = slog.Default()
+	debugMode bool
+)
+
+func SetLogger(l *slog.Logger, debug bool) {
+	logger = l
+	debugMode = debug
+}
+
 type errorResponse struct {
 	Error errorBody `json:"error"`
 }
@@ -40,9 +50,15 @@ func writeError(w http.ResponseWriter, err error) {
 		return
 	}
 
-	slog.Error("unhandled error", "error", err)
+	logger.Error("internal error", "error", err.Error())
+
+	msg := domain.ErrInternal.Message
+	if debugMode {
+		msg = err.Error()
+	}
+
 	writeJSON(w, http.StatusInternalServerError, errorResponse{
-		Error: errorBody{Code: domain.ErrInternal.Code, Message: domain.ErrInternal.Message},
+		Error: errorBody{Code: domain.ErrInternal.Code, Message: msg},
 	})
 }
 

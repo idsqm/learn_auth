@@ -21,6 +21,8 @@ type Config struct {
 	SMTPHost string `env:"SMTP_HOST,default=localhost"`
 	SMTPPort int    `env:"SMTP_PORT,default=1025"`
 	SMTPFrom string `env:"SMTP_FROM,default=noreply@auth.local"`
+
+	Debug bool `env:"DEBUG,default=false"`
 }
 
 func Load() (*Config, error) {

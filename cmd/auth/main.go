@@ -28,6 +28,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	logLevel := slog.LevelInfo
+	if cfg.Debug {
+		logLevel = slog.LevelDebug
+	}
+	log = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: logLevel}))
+	handler.SetLogger(log, cfg.Debug)
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
