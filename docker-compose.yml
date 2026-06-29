@@ -1,5 +1,5 @@
 services:
-  app:
+  auth-app:
     container_name: auth-app
     build:
       context: .
@@ -20,7 +20,7 @@ services:
     depends_on:
       auth-db:
         condition: service_healthy
-      redis:
+      cache:
         condition: service_healthy
       mailpit:
         condition: service_started
@@ -37,7 +37,7 @@ services:
       - gomodcache:/go/pkg/mod
     environment:
       DB_URL: postgres://${POSTGRES_USER:-auth}:${POSTGRES_PASSWORD:-auth}@auth-db:5432/${POSTGRES_DB:-auth}?sslmode=disable
-      REDIS_URL: redis://redis:6379/0
+      REDIS_URL: redis://cache:6379/0
       JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
       ACCESS_TOKEN_TTL: ${ACCESS_TOKEN_TTL:-15m}
       REFRESH_TOKEN_TTL: ${REFRESH_TOKEN_TTL:-168h}
@@ -48,7 +48,7 @@ services:
     depends_on:
       auth-db:
         condition: service_healthy
-      redis:
+      cache:
         condition: service_healthy
     profiles:
       - tools
@@ -73,7 +73,7 @@ services:
     networks:
       - learnquest
 
-  auth-cache:
+  cache:
     image: redis:7-alpine
     ports:
       - "${REDIS_PORT:-6379}:6379"
