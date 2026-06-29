@@ -44,7 +44,7 @@ prod-build:
 	$(PROD) build
 
 prod-migrate-up:
-	$(PROD) run --rm auth-app goose -dir /migrations postgres "$(DB_URL_DOCKER)" up
+	$(PROD) run --rm --entrypoint goose auth-app -dir /migrations postgres "$(DB_URL_DOCKER)" up
 
 prod-migrate-down:
-	$(PROD) run --rm auth-app goose -dir /migrations postgres "$(DB_URL_DOCKER)" down
+	$(PROD) run --rm --entrypoint goose auth-app -dir /migrations postgres "$(DB_URL_DOCKER)" down
