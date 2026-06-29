@@ -73,7 +73,7 @@ services:
     volumes:
       - pgadmin_data:/var/lib/pgadmin
     depends_on:
-      postgres:
+      auth-db:
         condition: service_healthy
     restart: unless-stopped
     networks:
