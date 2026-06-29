@@ -1,5 +1,6 @@
 services:
   app:
+    container_name: auth-app
     build:
       context: .
       target: runner
@@ -24,10 +25,9 @@ services:
       mailpit:
         condition: service_started
     networks:
-      - auth-backend
-      - learnquest-cache
+      - learnquest
 
-  dev:
+  auth-dev:
     build:
       context: .
       target: builder
@@ -53,8 +53,7 @@ services:
     profiles:
       - tools
     networks:
-      - auth-backend
-      - learnquest-cache
+      - learnquest
 
   auth-db:
     image: postgres:16-alpine
@@ -72,10 +71,9 @@ services:
       timeout: 3s
       retries: 5
     networks:
-      - auth-backend
       - learnquest
 
-  redis:
+  auth-cache:
     image: redis:7-alpine
     ports:
       - "${REDIS_PORT:-6379}:6379"
@@ -85,7 +83,7 @@ services:
       timeout: 3s
       retries: 5
     networks:
-      - learnquest-cache
+      - learnquest
 
   mailpit:
     image: axllent/mailpit
@@ -93,7 +91,7 @@ services:
       - "127.0.0.1:${MAILPIT_SMTP_PORT:-1025}:1025"
       - "127.0.0.1:${MAILPIT_UI_PORT:-8025}:8025"
     networks:
-      - learnquest-cache
+      - learnquest
 
   pgadmin:
     image: dpage/pgadmin4:latest
@@ -114,7 +112,5 @@ volumes:
   pgadmin_data:
 
 networks:
-  auth-backend:
-  learnquest-cache:
   learnquest:
     external: true

@@ -1,5 +1,6 @@
 services:
   app:
+    container_name: auth-app
     build:
       context: .
       target: runner
@@ -24,8 +25,10 @@ services:
         condition: service_healthy
       mailpit:
         condition: service_started
+    networks:
+      - learnquest
 
-  postgres:
+  auth-db:
     image: postgres:16
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
@@ -39,8 +42,10 @@ services:
       timeout: 3s
       retries: 5
     restart: unless-stopped
+    networks:
+      - learnquest
 
-  redis:
+  auth-cache:
     image: redis:7
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -48,6 +53,8 @@ services:
       timeout: 3s
       retries: 5
     restart: unless-stopped
+    networks:
+      - learnquest
 
   mailpit:
     image: axllent/mailpit
@@ -69,7 +76,13 @@ services:
       postgres:
         condition: service_healthy
     restart: unless-stopped
+    networks:
+      - learnquest
 
 volumes:
   pgdata:
   pgadmin_data:
+
+networks:
+  learnquest:
+    external: true

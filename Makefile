@@ -4,7 +4,7 @@
 include .env
 export
 
-DEV=docker compose --profile tools run --rm dev
+DEV=docker compose --profile tools run --rm auth-dev
 GOOSE=$(DEV) go run github.com/pressly/goose/v3/cmd/goose@latest
 DB_URL_DOCKER=postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@auth-db:5432/$(POSTGRES_DB)?sslmode=disable
 
@@ -44,7 +44,7 @@ prod-build:
 	$(PROD) build
 
 prod-migrate-up:
-	$(PROD) run --rm app goose -dir /migrations postgres "$(DB_URL_DOCKER)" up
+	$(PROD) run --rm auth-app goose -dir /migrations postgres "$(DB_URL_DOCKER)" up
 
 prod-migrate-down:
-	$(PROD) run --rm app goose -dir /migrations postgres "$(DB_URL_DOCKER)" down
+	$(PROD) run --rm auth-app goose -dir /migrations postgres "$(DB_URL_DOCKER)" down
