@@ -28,6 +28,7 @@ type AuthService interface {
 	ResetPassword(ctx context.Context, token, newPassword string) error
 	Me(ctx context.Context, userID uuid.UUID) (*domain.User, error)
 	UpdateUserRole(ctx context.Context, userID uuid.UUID, role string) error
+	UpdateUserAvatar(ctx context.Context, userID uuid.UUID, avatarURL string) error
 }
 
 type authService struct {
@@ -287,6 +288,10 @@ func (s *authService) Me(ctx context.Context, userID uuid.UUID) (*domain.User, e
 
 func (s *authService) UpdateUserRole(ctx context.Context, userID uuid.UUID, role string) error {
 	return s.users.UpdateRole(ctx, userID, role)
+}
+
+func (s *authService) UpdateUserAvatar(ctx context.Context, userID uuid.UUID, avatarURL string) error {
+	return s.users.UpdateAvatar(ctx, userID, avatarURL)
 }
 
 func generateSecureToken() (string, error) {

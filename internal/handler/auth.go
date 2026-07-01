@@ -221,11 +221,44 @@ func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeOK(w, map[string]interface{}{
-		"id":       userId,
-		"username": user.Username,
-		"email":    user.Email,
-		"role":     user.Role,
+		"id":         userId,
+		"username":   user.Username,
+		"email":      user.Email,
+		"role":       user.Role,
+		"avatar_url": user.AvatarURL,
 	})
+}
+
+type updateAvatarRequest struct {
+	AvatarURL string `json:"avatar_url"`
+}
+
+func (h *AuthHandler) UpdateAvatar(w http.ResponseWriter, r *http.Request) {
+	userId, ok := UserIDFromContext(r.Context())
+	if !ok {
+		writeError(w, domain.ErrUnauthorized)
+		return
+	}
+
+	var req updateAvatarRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, domain.ErrValidation)
+		return
+	}
+
+	if req.AvatarURL == "" {
+		ve := domain.NewValidationErrors()
+		ve.Add("avatar_url", "required")
+		writeError(w, ve)
+		return
+	}
+
+	if err := h.auth.UpdateUserAvatar(r.Context(), userId, req.AvatarURL); err != nil {
+		writeError(w, err)
+		return
+	}
+
+	writeOK(w, map[string]string{"message": "Avatar updated successfully"})
 }
 
 type resetRequestBody struct {

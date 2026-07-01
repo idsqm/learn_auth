@@ -42,6 +42,7 @@ func NewRouter(authSvc service.AuthService, jwtManager *jwt.Manager, tokens repo
 		r.Group(func(r chi.Router) {
 			r.Use(AuthMiddleware(jwtManager, tokens))
 			r.Get("/me", auth.Me)
+			r.Put("/me/avatar", auth.UpdateAvatar)
 			r.Post("/logout", auth.Logout)
 			r.Get("/sessions", sessions.List)
 		})
